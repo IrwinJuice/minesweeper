@@ -1,0 +1,22 @@
+#field {
+    border: 2px solid red;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-content: stretch;
+    justify-content: center;
+    align-items: stretch;
+}
+.row {
+    display: flex;
+    justify-content: center;
+    align-content: stretch;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-items: stretch;
+}
+.cell {
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid black;
+}
