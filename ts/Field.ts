@@ -6,12 +6,14 @@ export class Field {
     readonly mines: number;
     readonly cells: Array<Cell[]> = [];
     private isStarted             = false;
+    private flags;
 
 
     constructor(rows: number, columns: number, mines: number) {
         this.columns = columns;
         this.rows    = rows;
         this.mines   = mines;
+        this.flags   = mines;
     }
 
     generateCells(): Field {
@@ -34,8 +36,25 @@ export class Field {
     }
 
     render(): Field {
+        const scoreBlock  = document.querySelector('.score-block')! as HTMLDivElement;
+        const score  = document.getElementById('score')! as HTMLElement;
+        const winner  = document.getElementById('winner')! as HTMLElement;
+
+        if (this.isStarted) {
+            scoreBlock.style.visibility = 'visible';
+            score.innerText = `${this.flags}`;
+        } else {
+            scoreBlock.style.visibility = 'hidden';
+            score.innerText = '';
+            winner.style.visibility = 'hidden';
+        }
+
         const field: HTMLElement = document.getElementById('field')!;
         field.innerHTML          = '';
+        const notMines = this.rows * this.columns - this.mines;
+        let openedCells = 0;
+
+
         for (let i = 0; i < this.rows; i++) {
             let row       = document.createElement('div') as HTMLDivElement;
             row.className = 'row'
@@ -53,6 +72,7 @@ export class Field {
                 });
                 if (cell.isOpen) {
                     cellElement.className = 'cell cell--open'
+                    openedCells = openedCells + 1;
                     if (cell.isMine) {
                         cellElement.className = 'cell cell--open cell--mine'
                     } else {
@@ -70,6 +90,11 @@ export class Field {
                 row.appendChild(cellElement);
             }
         }
+
+        if (openedCells === notMines && this.flags === 0) {
+            const htmlElement = document.getElementById('winner')!;
+            htmlElement.style.visibility = 'visible';
+        }
         return this;
     }
 
@@ -85,11 +110,11 @@ export class Field {
                     this.onLose();
                     this.render();
                 } else {
+                    cell.isOpen = true;
                     if (cell.neighborMineCount === 0) {
                         this.markAsOpenIfMineCountNull(cell);
                         this.render();
                     } else {
-                        cell.isOpen = true;
                         target.setAttribute('data-row', cell.row.toString());
                         target.setAttribute('data-column', cell.col.toString());
                         this.render();
@@ -105,26 +130,32 @@ export class Field {
             this.setNeighbors();
             this.markAsOpenIfMineCountNull(cell);
 
-            this.render()
             this.isStarted = true;
+            this.render()
         }
     }
 
     setFlag(event: Event) {
 
-        const target   = event.currentTarget as HTMLDivElement;
-        const row      = target.getAttribute("data-row")!;
-        const column   = target.getAttribute("data-column")!;
-        let cell: Cell = this.cells[+row][+column];
+        if (this.isStarted) {
 
-        if (!cell.isOpen) {
-            cell.hasFlag = !cell.hasFlag;
-            target.setAttribute('data-row', cell.row.toString());
-            target.setAttribute('data-column', cell.col.toString());
-            if (cell.hasFlag) {
-                target.className = 'cell cell--flag';
-            } else {
-                target.innerHTML = '';
+            const target   = event.currentTarget as HTMLDivElement;
+            const row      = target.getAttribute("data-row")!;
+            const column   = target.getAttribute("data-column")!;
+            let cell: Cell = this.cells[+row][+column];
+
+            if (!cell.isOpen) {
+                cell.hasFlag = !cell.hasFlag;
+                target.setAttribute('data-row', cell.row.toString());
+                target.setAttribute('data-column', cell.col.toString());
+
+                if (cell.hasFlag) {
+                    this.decreaseScore();
+                    target.className = 'cell cell--flag';
+                } else {
+                    this.increaseScore();
+                    target.className = 'cell';
+                }
             }
         }
     }
@@ -263,4 +294,41 @@ export class Field {
         }
     }
 
+    private increaseScore() {
+        const score = document.getElementById('score')!;
+        this.flags = this.flags + 1;
+        score.innerText = `${ this.flags }`;
+    }
+
+    private decreaseScore() {
+        const score = document.getElementById('score')!;
+        this.flags = this.flags - 1;
+        score.innerText = `${ this.flags}`;
+    }
+
+    // for test
+    showMines () {
+
+        const field: HTMLElement = document.getElementById('field')!;
+        field.innerHTML          = '';
+
+
+        for (let i = 0; i < this.rows; i++) {
+            let row       = document.createElement('div') as HTMLDivElement;
+            row.className = 'row'
+            field.appendChild(row);
+            for (let k = 0; k < this.columns; k++) {
+                let cell: Cell        = this.cells[i][k];
+                let cellElement       = document.createElement('div') as HTMLDivElement;
+                cellElement.className = 'cell';
+
+                if (cell.isMine) {
+                    cellElement.className = 'cell cell--open cell--mine'
+                }
+                row.appendChild(cellElement);
+            }
+        }
+
+        return this;
+    }
 }

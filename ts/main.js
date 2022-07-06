@@ -23,6 +23,10 @@ function playSmall() {
     const mines = 18;
     const field = new Field(rows, columns, mines);
     field.generateCells().render();
+    const m = document.getElementById('mine');
+    m.addEventListener('click', () => field.showMines());
+    const re = document.getElementById('re');
+    re.addEventListener('click', () => field.render());
 }
 function playMiddle() {
     const rows = 18;

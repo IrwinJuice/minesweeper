@@ -5,6 +5,7 @@ export class Field {
         this.columns = columns;
         this.rows = rows;
         this.mines = mines;
+        this.flags = mines;
     }
     generateCells() {
         for (let i = 0; i < this.rows; i++) {
@@ -25,8 +26,22 @@ export class Field {
         return this;
     }
     render() {
+        const scoreBlock = document.querySelector('.score-block');
+        const score = document.getElementById('score');
+        const winner = document.getElementById('winner');
+        if (this.isStarted) {
+            scoreBlock.style.visibility = 'visible';
+            score.innerText = `${this.flags}`;
+        }
+        else {
+            scoreBlock.style.visibility = 'hidden';
+            score.innerText = '';
+            winner.style.visibility = 'hidden';
+        }
         const field = document.getElementById('field');
         field.innerHTML = '';
+        const notMines = this.rows * this.columns - this.mines;
+        let openedCells = 0;
         for (let i = 0; i < this.rows; i++) {
             let row = document.createElement('div');
             row.className = 'row';
@@ -44,6 +59,7 @@ export class Field {
                 });
                 if (cell.isOpen) {
                     cellElement.className = 'cell cell--open';
+                    openedCells = openedCells + 1;
                     if (cell.isMine) {
                         cellElement.className = 'cell cell--open cell--mine';
                     }
@@ -64,6 +80,10 @@ export class Field {
                 row.appendChild(cellElement);
             }
         }
+        if (openedCells === notMines && this.flags === 0) {
+            const htmlElement = document.getElementById('winner');
+            htmlElement.style.visibility = 'visible';
+        }
         return this;
     }
     sweep(event) {
@@ -78,12 +98,12 @@ export class Field {
                     this.render();
                 }
                 else {
+                    cell.isOpen = true;
                     if (cell.neighborMineCount === 0) {
                         this.markAsOpenIfMineCountNull(cell);
                         this.render();
                     }
                     else {
-                        cell.isOpen = true;
                         target.setAttribute('data-row', cell.row.toString());
                         target.setAttribute('data-column', cell.col.toString());
                         this.render();
@@ -98,24 +118,28 @@ export class Field {
             this.setMines(cell);
             this.setNeighbors();
             this.markAsOpenIfMineCountNull(cell);
-            this.render();
             this.isStarted = true;
+            this.render();
         }
     }
     setFlag(event) {
-        const target = event.currentTarget;
-        const row = target.getAttribute("data-row");
-        const column = target.getAttribute("data-column");
-        let cell = this.cells[+row][+column];
-        if (!cell.isOpen) {
-            cell.hasFlag = !cell.hasFlag;
-            target.setAttribute('data-row', cell.row.toString());
-            target.setAttribute('data-column', cell.col.toString());
-            if (cell.hasFlag) {
-                target.className = 'cell cell--flag';
-            }
-            else {
-                target.innerHTML = '';
+        if (this.isStarted) {
+            const target = event.currentTarget;
+            const row = target.getAttribute("data-row");
+            const column = target.getAttribute("data-column");
+            let cell = this.cells[+row][+column];
+            if (!cell.isOpen) {
+                cell.hasFlag = !cell.hasFlag;
+                target.setAttribute('data-row', cell.row.toString());
+                target.setAttribute('data-column', cell.col.toString());
+                if (cell.hasFlag) {
+                    this.decreaseScore();
+                    target.className = 'cell cell--flag';
+                }
+                else {
+                    this.increaseScore();
+                    target.className = 'cell';
+                }
             }
         }
     }
@@ -250,5 +274,34 @@ export class Field {
                 ];
             }
         }
+    }
+    increaseScore() {
+        const score = document.getElementById('score');
+        this.flags = this.flags + 1;
+        score.innerText = `${this.flags}`;
+    }
+    decreaseScore() {
+        const score = document.getElementById('score');
+        this.flags = this.flags - 1;
+        score.innerText = `${this.flags}`;
+    }
+    showMines() {
+        const field = document.getElementById('field');
+        field.innerHTML = '';
+        for (let i = 0; i < this.rows; i++) {
+            let row = document.createElement('div');
+            row.className = 'row';
+            field.appendChild(row);
+            for (let k = 0; k < this.columns; k++) {
+                let cell = this.cells[i][k];
+                let cellElement = document.createElement('div');
+                cellElement.className = 'cell';
+                if (cell.isMine) {
+                    cellElement.className = 'cell cell--open cell--mine';
+                }
+                row.appendChild(cellElement);
+            }
+        }
+        return this;
     }
 }
